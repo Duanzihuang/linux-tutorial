@@ -24,6 +24,21 @@ unzip mydata.zip -d mydatabak
 ```
 # 创建快捷方式（以node为例）
 ln -s ~/node-v8.11.4-linux-x64/bin/node /usr/bin/node
+
+# 查找文件所在位置
+whereis nginx.conf
+
+# 拷贝文件
+cp 源文件(source) 目标文件(destination)
+
+# 移动文件
+mv source destination
+
+# 删除文件
+rm -rf 文件名称
+
+# 更改文件 & 文件夹权限
+chmod 777 文件&文件夹名
 ```
 
 ### 三、创建服务

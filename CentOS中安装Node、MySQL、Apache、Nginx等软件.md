@@ -246,57 +246,97 @@ port=27017
 
 ### 六、Nginx的安装及配置
 
-####1、下载及安装
+####1、下载&编译&安装
 
 ```
 # 下载压缩包
-wget http://nginx.org/download/nginx-1.14.1.tar.gz
+wget http://nginx.org/download/nginx-1.11.13.tar.gz
 
 # 解压
-tar -xzf nginx-1.14.1.tar.gz
+tar -zxvf nginx-1.11.13.tar.gz
+cd nginx-1.11.13
+
+# 编译安装
+注意:在安装之前首先检查一下是否已安装nginx的一些模块依赖的lib库，诸如g++、gcc、pcre-devel、openssl-devel和zlib-devel。所以下面这些命令最好挨个跑一遍，已安装的会提示不用安装，未安装或需要更新的则会执行安装及更新：
+
+yum -y install gcc-c++  pcre pcre-devel  zlib zlib-devel openssl openssl-devel --setopt=protected_multilib=false 
+
+# 安装完依赖后下面就可以放心开始安装nginx了，输入安装命令并指定安装路径
+./configure --prefix=/usr/local/nginx
+
+# 通过make以及make install进行编译安装
+make && make install
+
+# 启动
+/usr/local/nginx/sbin/nginx
+
+# 杀掉nginx进程
+killall -9 nginx
+
 ```
 
-#### 2、Nginx的相关配置
+#### 2、把Nginx做成服务
 
 ```
-# 拷贝nginx中的vim文件
-cp -r contrib/vim/* ~/.vim/
+# 新建nginx.service
+vim /lib/systemd/system/nginx.service
+
+# 在nginx.service中添加如下代码
+[Unit]  
+Description=The nginx HTTP and reverse proxy server  
+After=syslog.target network.target remote-fs.target nss-lookup.target  
+
+[Service]  
+Type=forking  
+PIDFile=/usr/local/nginx/logs/nginx.pid  
+ExecStartPre=/usr/local/nginx/sbin/nginx -t  
+ExecStart=/usr/local/nginx/sbin/nginx -c /usr/local/nginx/conf/nginx.conf  
+ExecReload=/bin/kill -s HUP $MAINPID  
+ExecStop=/bin/kill -s QUIT $MAINPID  
+PrivateTmp=true  
+
+[Install]  
+WantedBy=multi-user.target
+
+# 更改nginx.service的权限并让其可用
+chmod 745 nginx.service
+systemctl enable nginx.service
+
+# 查看nginx状态
+systemctl status nginx.service
+
+# 启动
+systemctl start nginx.service
+
+# 停止
+systemctl stop nginx.service
+
+# 重新启动
+systemctl reload nginx.service
 ```
 
-#### 3、编译Nginx
+#### 3、配置Nginx
 
 ```
-参考:
-	https://www.cnblogs.com/jerrypro/p/7062101.html
-	
-# 首先由于nginx的一些模块依赖一些lib库，所以在安装nginx之前，必须先安装这些lib库，这些依赖库主要有g++、gcc、openssl-devel、pcre-devel和zlib-devel 所以执行如下命令安装
-	 yum install gcc-c++  
-     yum install pcre pcre-devel  
-     yum install zlib zlib-devel  
-     yum install openssl openssl--devel  
+# 更改nginx端口号 & 运行文件夹
 
-# 查看配置文件支持的参数
-./configure --help | more
+# 首先找到配置文件在哪
+whereis nginx.conf
+cd /usr/local/nginx
+vim /usr/local/nginx/conf/nginx.conf
 
-# 编译到指定目录(这个就是Nginx的安装目录)
-./configure --prefix=/ftp/nginx
+# 修改如下地方
+server {
+        listen       8080; # 端口号更改这里
+        server_name  localhost;
 
-	如果出现错误:
-		需要安装pcre库哦。如果是centos，请使用yum install pcre pcre-devel -y命令安装
+        #charset koi8-r;
 
-# 编译nginx
-make
+        #access_log  logs/host.access.log  main;
 
-# 安装
-make install
-
-# 检查nginx安装的目录
-whereis nginx  
+        location / {
+            root   /ftp/nginx; # 运行文件夹所在位置
+            index  index.html index.htm;
+        }
+}
 ```
-
-
-
-
-
-
-
