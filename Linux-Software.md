@@ -11,21 +11,21 @@ yum install -y wget
 #### 2、下载nodejs最新的bin包
 
 ```
-wget https://nodejs.org/dist/v8.11.4/node-v8.11.4-linux-x64.tar.xz
+wget https://nodejs.org/dist/v13.9.0/node-v13.9.0-linux-x64.tar.xz
 ```
 
 #### 3、解压包 
 
 ```
-xz -d node-v8.11.4-linux-x64.tar.xz
-tar -xf node-v8.11.4-linux-x64.tar
+xz -d node-v13.9.0-linux-x64.tar.xz
+tar -xf node-v13.9.0-linux-x64.tar
 ```
 
 ####4、部署bin文件(配置环境变量)
 
 ```
-ln -s ~/node-v8.11.4-linux-x64/bin/node /usr/bin/node
-ln -s ~/node-v8.11.4-linux-x64/bin/npm /usr/bin/npm
+ln -s ~/node-v13.9.0-linux-x64/bin/node /usr/bin/node
+ln -s ~/node-v13.9.0-linux-x64/bin/npm /usr/bin/npm
 ```
 
 
@@ -196,7 +196,7 @@ cat /etc/passwd
 
 #### 1、下载及安装
 
-```
+```js
 # 下载
 wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel70-4.0.1.tgz
 
@@ -209,7 +209,7 @@ mv mongodb-linux-x86_64-rhel70-4.0.1 mongodb
 
 #### 2、启动及配置 MongoDB
 
-```
+```js
 # 移动到 /usr/local目录下
 mv mongodb /usr/local
 
@@ -228,7 +228,7 @@ vim  /etc/profile
 
 #### 3、设置成开机启动
 
-```
+```js
 # 在mongodb的bin目录下创建mongodb.conf，并且写上脚本
 touch mongodb.conf
 
@@ -238,17 +238,13 @@ dbpath=/home/data/db
 logpath=/home/data/logs/mongodb.log
 logappend=true
 port=27017
-
-
 ```
-
-
 
 ### 六、Nginx的安装及配置
 
 ####1、下载&编译&安装
 
-```
+```js
 # 下载压缩包
 wget http://nginx.org/download/nginx-1.11.13.tar.gz
 
@@ -261,7 +257,7 @@ cd nginx-1.11.13
 
 yum -y install gcc-c++  pcre pcre-devel  zlib zlib-devel openssl openssl-devel --setopt=protected_multilib=false 
 
-# 安装完依赖后下面就可以放心开始安装nginx了，输入安装命令并指定安装路径
+# 切换到nginx目录下，安装完依赖后下面就可以放心开始安装nginx了，输入安装命令并指定安装路径
 ./configure --prefix=/usr/local/nginx
 
 # 通过make以及make install进行编译安装
@@ -277,7 +273,7 @@ killall -9 nginx
 
 #### 2、把Nginx做成服务
 
-```
+```js
 # 新建nginx.service
 vim /lib/systemd/system/nginx.service
 
@@ -317,7 +313,7 @@ systemctl reload nginx.service
 
 #### 3、配置Nginx
 
-```
+```js
 # 更改nginx端口号 & 运行文件夹
 
 # 首先找到配置文件在哪
@@ -340,3 +336,171 @@ server {
         }
 }
 ```
+
+#### 4、Nginx其它
+
+```js
+# nginx是什么，做什么事情
+	Nginx (engine x) 是一个高性能的HTTP和反向代理web服务器。
+
+# 正向代理 & 反向代理
+	正向代理：翻墙
+	反向代理：先把请求发送给Nginx，然后Nginx再把请求转发给其它服务器，比如Tomcat、Node等
+	
+# 负载均衡
+	一台服务器不能搞定高并发，那么就多弄几台服务器，然后通过Nginx进行转发，把请求平均分配给其它服务器处理
+
+# 动静分离
+	动态资源（JSP、Servlet）放在Tomcat服务器中处理，并且提供访问
+	静态资源（HTML、CSS、JS）放在静态资源服务器中处理，并且提供访问
+  
+# 高可用
+	一般会配置多台nginx，一台作为主的Nginx，其它作为备份的Nginx，一旦主的Nginx宕机了，备份的Nginx就开始完成工作
+  保证请求的持续可访问
+```
+
+#### 5、Nginx常用命令 & 配置文件
+
+```js
+前提：要想操作nginx，必须先进入nginx的sbin目录 cd /usr/local/nginx/sbin，并且命令都要以 `./nginx` 开头
+# 常用命令
+./nginx -v 查看版本号
+./nginx 启动nginx
+./nginx -s stop 停止nginx
+./nginx -s reload 重新加载配置文件
+
+# 配置文件
+文件所在目录：/usr/local/nginx/conf/nginx.conf
+```
+
+#### 6、反向代理配置
+
+```js
+1、进入到nginx配置文件所在目录
+cd /usr/local/nginx/conf/
+
+2、使用 `vim` 开始编辑 `nginx.conf` 配置文件
+vim nginx.conf
+
+3、更改 nginx.conf 中的配置代码
+server {
+        listen       80;
+        server_name  localhost;
+
+        location / {
+            root   /ftp/nginx;
+            proxy_pass http://127.0.0.1:8081;
+            index  index.html index.htm;
+        }
+}
+server {
+        listen       443 ssl;
+        server_name  localhost;
+
+        ssl_certificate      /ftp/nginx/nginx_pem/www.huangjiangjun.top.pem;
+        ssl_certificate_key  /ftp/nginx/nginx_pem/www.huangjiangjun.top.key;
+
+        ssl_session_cache    shared:SSL:1m;
+        ssl_session_timeout  5m;
+
+        ssl_ciphers  HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers  on;
+
+        location / {
+            root   /ftp/nginx;
+            proxy_pass https://127.0.0.1:8082;
+            index  index.html index.htm;
+        }
+}
+4、重新启动nginx.conf的配置文件【切换到nginx的sbin目录】
+./nginx -s reload
+```
+
+#### 7、动静分离
+
+```js
+vim nginx.conf
+
+http {
+  server {
+		listen 80;
+    server_name localhost;
+    
+    location /www/ {
+      root /statics/;
+      index index.html index.htm;
+    }
+    
+    location /images/ {
+      root /statics/;
+      autoindex on;
+    }
+	}
+}
+```
+
+#### 8、负载均衡
+
+```js
+vim nginx.conf
+
+http {
+	# 配置多个服务器，来处理并发请求，nginx会自动进行负载均衡调用
+	upstreat myserver {
+    # ip_hash 每个请求按访问ip的hash结果分配，这样每个访问固定访问一个后端服务器，可以解决Session的问题
+    ip_hash;
+		server 192.168.17.129:8080 weight=5;
+		server 192.168.17.129:8081 weight=10;
+		xxxx
+    # fair 按后端服务器的响应时间来分配请求，响应时间短的优先分配
+    fair
+	}
+	
+	server {
+		listen 80;
+    server_name 192.168.17.129;
+    
+    location / {
+      proxy_pass http://myserver;
+      root html;
+      index index.html index.htm;
+    }
+	}
+}
+```
+
+#### 9、高并发处理(高可用集群)
+
+```
+步骤：
+	1、需要两台（多台）nginx
+	
+	2、需要在每台nginx上面安装keepalived
+		yum install keepalived -y
+		检测是否安装成功  
+			rpm -q -a keepalived
+		安装在了 etc 目录中，也可以cd到该目录查看
+			cd /etc/keepalived
+			
+	3、修改 keepalived.conf 配置文件
+		
+	4、需要配置虚拟ip
+	
+	5、把两台机器上面的nginx和keepalived都启动
+		./nginx
+		systemctl start keepalived.service 可以通过查看进行看是否存在  ps -ef | grep keepalived
+```
+
+#### 10、Nginx运行原理解析
+
+```bash
+# master & worker
+启动nginx之后，会有一个master进程和多个worker进程，其中master负责指挥，worker负责干活
+好处：①可以让Nginx轻松实现热部署 ./nginx -s reload、②每个worker都是独立的，不需要加锁，节省开销
+ps -ef | grep nginx  # 查看nginx启动之后的进程
+
+# worker & client
+```
+
+
+
