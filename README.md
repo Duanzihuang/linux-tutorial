@@ -9,3 +9,4 @@ Linux之常用软件安装：https://github.com/Duanzihuang/linux-tutorial/blob/
 
 Docker：https://github.com/Duanzihuang/linux-tutorial/blob/master/Docker.md
 
+前端项目部署：https://github.com/Duanzihuang/linux-tutorial/blob/master/Deploy.md
